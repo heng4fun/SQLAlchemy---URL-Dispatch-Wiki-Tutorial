@@ -1,0 +1,2 @@
+USERS = {'editor' : 'editor', 'view' : 'viewor'}
+GROUPS = {'editor' : ['group:edit']}
