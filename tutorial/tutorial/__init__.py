@@ -1,15 +1,15 @@
 from pyramid.config import Configurator
-from sqlalchemy import engine_from_config
-
 from pyramid.authentication import AuthTktAuthenticationPolicy
 from pyramid.authorization import ACLAuthorizationPolicy
-from tutorial.security import groupfinder
 
-from models import (
+from sqlalchemy import engine_from_config
+
+from .security import groupfinder
+
+from .models import (
     DBSession,
     Base,
     )
-
 
 def main(global_config, **settings):
     """ This function returns a Pyramid WSGI application.
@@ -26,10 +26,11 @@ def main(global_config, **settings):
     config.set_authorization_policy(authz_policy)
     config.add_static_view('static', 'static', cache_max_age=3600)
     config.add_route('view_wiki', '/')
-    config.add_route('view_page', '/{pagename}')
-    config.add_route('add_page', '/add_page/{pagename}')
-    config.add_route('edit_page','/{pagename}/edit_page')
     config.add_route('login', '/login')
     config.add_route('logout', '/logout')
+    config.add_route('view_page', '/{pagename}')
+    config.add_route('add_page', '/add_page/{pagename}')
+    config.add_route('edit_page', '/{pagename}/edit_page')
     config.scan()
     return config.make_wsgi_app()
+

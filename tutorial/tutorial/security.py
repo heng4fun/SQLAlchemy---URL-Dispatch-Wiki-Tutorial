@@ -1,6 +1,6 @@
-USERS = {'editor' : 'editor', 'view' : 'viewer'}
-GROUPS = {'editor' : ['group:editor']}
+USERS = {'editor' : 'editor', 'viewer' : 'viewer'}
+GROUPS = {'editor' : ['group:editors']}
 
-def groupfinder(useid, request):
-    if useid in USERS:
-        return GROUPS.get(useid, [])
+def groupfinder(userid, request):
+    if userid in USERS:
+        return GROUPS.get(userid, [])
