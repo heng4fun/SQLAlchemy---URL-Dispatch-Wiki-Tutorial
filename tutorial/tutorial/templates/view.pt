@@ -19,8 +19,8 @@
         type="text/css" media="screen" charset="utf-8" />
   <![endif]-->
   <script type="text/javascript">
-      function reply() {
-        var user = '@' + document.getElementById('user_name').value + '  ';
+      function reply(user_name) {
+        var user = '@' + document.getElementById(user_name).value + '  ';
         document.getElementById('reply').value = user;
       }
   </script>
@@ -77,13 +77,13 @@
         <div tal:repeat="post all_posts">
         <form name="${repeat.post.number}"  action="${delete_post_url}" method="post">
           
-            <input type="hidden" id = "user_name" name="user_name" value="${post.user_name}"/>
+            <input type="hidden" id = "${post.user_name}" name="user_name" value="${post.user_name}"/>
             <input type="hidden" name="post_time" value="${post.time}" />
           
           <strong>${post.user_name}</strong>&nbsp;&nbsp;&nbsp;&nbsp;
           <span>${post.time}</span>
           <span tal:condition="logged_in">   
-              <a href="#comments" onclick="reply()">回复</a>
+              <a href="#comments" onclick="reply('${post.user_name}')">回复</a>
           </span>
           <span tal:condition="editor">        
                 <input type="submit" name="form.post" value="删除">
