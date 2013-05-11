@@ -18,7 +18,14 @@
         href="${request.static_url('tutorial:static/ie6.css')}"
         type="text/css" media="screen" charset="utf-8" />
   <![endif]-->
+  <script type="text/javascript">
+      function reply() {
+        var user = '@' + document.getElementById('user_name').value + '  ';
+        document.getElementById('reply').value = user;
+      }
+  </script>
 </head>
+
 <body>
   <div id="wrap">
     <div id="top-small">
@@ -29,6 +36,7 @@
         </div>
       </div>
     </div>
+    
     <div id="middle">
       <div class="middle align-right">
         <div id="left" class="app-welcome align-left">
@@ -38,25 +46,72 @@
           <a href="${request.application_url}">FrontPage</a>.<br/>
         </div>
         <div id="right" class="app-welcome align-right">
+            <span tal:condition="not logged_in">
+               <a href="${request.application_url}/login">Login</a>
+            </span>
+            <span tal:condition="logged_in">
+               <span id="userid">${logged_in}</span>
+            </span>
+                       /
             <span tal:condition="logged_in">
                <a href="${request.application_url}/logout">Logout</a>
             </span>
         </div>
       </div>
     </div>
+    
     <div id="bottom">
       <div class="bottom">
         <div tal:replace="structure content">
           Page text goes here.
         </div>
+        
         <p>
-          <a tal:attributes="href edit_url" href="">
+          <span tal:condition="logged_in">
+            <a tal:attributes="href edit_url" href="">
             Edit this page
-          </a>
+            </a>   
+          </span>
         </p>
+        
+        <div tal:repeat="post all_posts">
+        <form name="${repeat.post.number}"  action="${delete_post_url}" method="post">
+          
+            <input type="hidden" id = "user_name" name="user_name" value="${post.user_name}"/>
+            <input type="hidden" name="post_time" value="${post.time}" />
+          
+          <strong>${post.user_name}</strong>&nbsp;&nbsp;&nbsp;&nbsp;
+          <span>${post.time}</span>
+          <span tal:condition="logged_in">   
+              <a href="#comments" onclick="reply()">回复</a>
+          </span>
+          <span tal:condition="editor">        
+                <input type="submit" name="form.post" value="删除">
+          </span>
+          <p tal:content="post.message">Message</p>
+          
+        </form>
+        </div>
+        <span tal:condition="logged_in">
+          <div id="comments_form">
+            <a name="comments"></a>
+            <form action="" method="post">
+              <fieldset>
+              <legend >Comments</legend>
+              
+                <textarea id="reply" name="message" rows="10" cols="60" >
+                </textarea>
+              
+                <div><input type="submit" name="form.submitted" value="OK"></div>
+            </fieldset>
+          </form>
+        </div>
+      </span>
       </div>
+       
     </div>
   </div>
+  <br /><br />
   <div id="footer">
     <div class="footer"
          >&copy; Copyright 2008-2013, JeremyHuang Consulting.</div>

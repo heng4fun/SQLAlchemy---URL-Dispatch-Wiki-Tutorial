@@ -15,15 +15,23 @@ from pyramid.security import (
     remember,
     forget,
     authenticated_userid,
+    has_permission,
+    Allowed,
     )
 
 from .models import (
     DBSession,
     Page,
+    User,
+    Posts,
+    RootFactory,
     )
+    
+from sqlalchemy.orm.exc import NoResultFound
 
-from .security import USERS
+from datetime import datetime
 
+#from security import USERS
 # regular expression used to find WikiWords
 wikiwords = re.compile(r"\b([A-Z]\w+[A-Z]+\w+)")
 
@@ -34,11 +42,12 @@ def view_wiki(request):
 
 @view_config(route_name='view_page', renderer='templates/view.pt')
 def view_page(request):
+    all_posts = []
     pagename = request.matchdict['pagename']
     page = DBSession.query(Page).filter_by(name=pagename).first()
     if page is None:
         return HTTPNotFound('No such page')
-
+    editor = has_permission('edit',RootFactory,request)    
     def check(match):
         word = match.group(1)
         exists = DBSession.query(Page).filter_by(name=word).all()
@@ -52,7 +61,13 @@ def view_page(request):
     content = publish_parts(page.data, writer_name='html')['html_body']
     content = wikiwords.sub(check, content)
     edit_url = request.route_url('edit_page', pagename=pagename)
-    return dict(page=page, content=content, edit_url=edit_url,
+    delete_post_url = request.route_url('delete_post', pagename=pagename)
+    if 'form.submitted' in request.params:
+        DBSession.add(Posts(authenticated_userid(request), pagename, request.params['message'], datetime.now()))
+    for post in DBSession.query(Posts).filter_by(page_name=pagename):
+        all_posts.append(post)
+    
+    return dict(page=page,  content=content, all_posts=all_posts, edit_url=edit_url, delete_post_url=delete_post_url, editor = editor,
                 logged_in=authenticated_userid(request))
 
 @view_config(route_name='add_page', renderer='templates/edit.pt',
@@ -86,6 +101,17 @@ def edit_page(request):
         logged_in=authenticated_userid(request),
         )
 
+@view_config(route_name='delete_post',permission='edit')
+def delete_post(request):
+    pagename = request.matchdict['pagename']
+    if 'form.post' in request.params:
+        user_name = request.params['user_name']
+        post_time = request.params['post_time']
+        DBSession.query(Posts).filter_by(user_name=user_name).filter_by(page_name=pagename).filter_by(time=post_time).delete()
+        return HTTPFound(location = request.route_url('view_page',pagename=pagename))
+ 
+    
+    
 @view_config(route_name='login', renderer='templates/login.pt')
 @forbidden_view_config(renderer='templates/login.pt')
 def login(request):
@@ -100,7 +126,19 @@ def login(request):
     if 'form.submitted' in request.params:
         login = request.params['login']
         password = request.params['password']
-        if USERS.get(login) == password:
+        try:
+            user = DBSession.query(User).filter_by(user_name=login).one()
+        except NoResultFound, e:
+            print e
+            return dict(
+        message = 'Wrong username or password! Please check it again.',
+        url = request.application_url + '/login',
+        came_from = came_from,
+        login = '',
+        password = '',
+        )
+        #if USERS.get(login) == password:
+        if user.password == password:
             headers = remember(request, login)
             return HTTPFound(location = came_from,
                              headers = headers)
@@ -119,4 +157,5 @@ def logout(request):
     headers = forget(request)
     return HTTPFound(location = request.route_url('view_wiki'),
                      headers = headers)
+   
     
